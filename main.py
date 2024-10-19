@@ -3,14 +3,75 @@ from BotToken import *
 from discord.ext import commands
 from discord import app_commands
 from discord.ext.commands import has_permissions,MissingPermissions
+from discord.ui import Button,View
+from discord.utils import get
 
 
 
 guild=discord.Object(id=1267143748320624711)
-ModChannel=discord.Object(id=1274673257404170264)
+ModChannel=1274673257404170264
+LogChannel=1294597383966949487
+WaitingChannel=1296548824872910859
+supportVC_1=1296721689266098187
+supportVC_2=1296796806709252159
+Admin=[1274694716373340233,1274694719443828847]
+
+# class which contains buttons for support vc
+class myview(View):
+  @discord.ui.button(label='🔒 |│ SUPPORT VC-1',style=discord.ButtonStyle.red)
+  async def vc1(self,interaction : discord.Interaction,button : Button):
+    adm=interaction.user
+    vc1=interaction.client.get_channel(supportVC_1)
+    wait_vc=interaction.client.get_channel(WaitingChannel)
+    if wait_vc and wait_vc.members:
+        members_in_vc=wait_vc.members
+        for members in members_in_vc:
+         if  adm.voice and adm.voice.channel:
+            if adm.voice.channel == wait_vc:
+                await adm.move_to(vc1)
+                await members.move_to(vc1)
+                if not interaction.response.is_done():
+                 await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
+
+            elif  adm.voice and adm.voice.channel:
+             await adm.move_to(vc1)
+             await members.move_to(vc1)
+             if not interaction.response.is_done():
+              await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
+        else:
+             await members.move_to(vc1)
+             if not interaction.response.is_done():
+              await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
+
+    
+
+  @discord.ui.button(label='🔒 |│ SUPPORT VC-2',style=discord.ButtonStyle.blurple)
+  async def vc2(self,interaction : discord.Interaction,button : Button):
+    adm=interaction.user
+    vc2=interaction.client.get_channel(supportVC_2)
+    wait_vc=interaction.client.get_channel(WaitingChannel)
+    if wait_vc and wait_vc.members:      
+      members_in_vc=wait_vc.members
+      for members in members_in_vc:
+        if  adm.voice and adm.voice.channel:
+            if adm.voice.channel == wait_vc:
+                await adm.move_to(vc2)
+                await members.move_to(vc2)
+                if not interaction.response.is_done():
+                 await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
+
+            elif  adm.voice and adm.voice.channel:
+             await adm.move_to(vc2)
+             await members.move_to(vc2)
+             if not interaction.response.is_done():
+              await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
+        else:
+             await members.move_to(vc2)
+             if not interaction.response.is_done():
+              await interaction.response.send_message(f'{members.mention} has moved to 🔒 |│ SUPPORT VC-2',ephemeral=True)
 
 
-
+# Main class
 class Client(commands.Bot):
     async def on_ready(self):
         await client.change_presence(status='idle',activity=discord.Streaming(name='VALORANT',url='https://www.twitch.tv/texture_07'))
@@ -18,7 +79,7 @@ class Client(commands.Bot):
         try:
            
             synced=await self.tree.sync(guild = guild)
-            print(f"synced{len(synced)} commands to guild {guild.id}")
+            print(f"synced {len(synced)} commands to guild {guild.id}")
         except Exception as e:
             print(f"Error syncing commands: {e}")
 
@@ -38,6 +99,18 @@ class Client(commands.Bot):
           embed.set_footer(text="Enjoy your stay in the server")
           await channel.send(embed=embed)
 
+#on member leaving guild
+    async def on_member_remove(self,user : discord.User):
+        LeaveChannel=1274694860779159705
+        leave_channel=client.get_channel(LeaveChannel)
+        if leave_channel is None:
+            await print('channel not found')
+        else:
+            embed=discord.Embed(title='LEAVE',description=f'{user.mention} left from our server\n **Good days ahead friend**',color=0x06e5fb)
+            embed.set_author(name='MEENAKSHI',icon_url='https://cdn.discordapp.com/attachments/1041590475318104085/1294329717784313858/Designer_3.jpeg?ex=67108cbc&is=670f3b3c&hm=ac0021d33c7f950a32891ac2e317cdddf27818bbe7b844e46da460ae73ed3c51&')
+            embed.set_thumbnail(url=user.avatar.url)
+            embed.set_footer(text="Good Bye")
+            await leave_channel.send(embed=embed)
 
 
     # Words detecting
@@ -46,6 +119,8 @@ class Client(commands.Bot):
             return
         if message.content == 'hai':
             await message.channel.send(f"Hello  {message.author.mention}, sukhamano 😚")
+        elif message.content == 'hi':
+            await message.channel.send(f"Hello  {message.author.mention}, kandathil santhosham")
         elif message.content.startswith('hello'):
             await message.channel.send(f"Hey! {message.author.mention},engane ponnu life?")
         elif 'fuck' in message.content:
@@ -53,8 +128,26 @@ class Client(commands.Bot):
             await message.channel.send(f"{message.author.mention}  ni shookshicho ente cherukkan kindum ninne")
 
 
+#  # Waiting vc
+    async def on_voice_state_update(self,member : discord.Member,before,after):
+      waiting_vc=client.get_channel(WaitingChannel)
+      mod_channel=client.get_channel(ModChannel)
+      if before.channel!= waiting_vc and after.channel == waiting_vc:
+        if any(role.id in Admin for role in member.roles):
+         return
+        elif ModChannel is not None:
+            View=myview()
+            embed=discord.Embed(title='**SUPPORT**',description='Thank you for contacting suppoort.Our staffs have been notified.Kindly wait until they arrive',color=0x18f1a2)
+            embed.set_author(name='MEENAKSHI',icon_url='https://cdn.discordapp.com/attachments/1041590475318104085/1294329717784313858/Designer_3.jpeg?ex=67108cbc&is=670f3b3c&hm=ac0021d33c7f950a32891ac2e317cdddf27818bbe7b844e46da460ae73ed3c51&')
+            embed.set_footer(text='Supoort Team')
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1267463145509884034/1297063562220404756/66cd8567624cffc5d6b838dd.gif?ex=67149013&is=67133e93&hm=98795ac7de12eac645508a9ccb898da2076f0844d9f2e266e8deb5e7b0c243cf&')
+            await member.send(embed=embed)
+            await mod_channel.send(f'\n\n⚠️**ATTENTION**⚠️\n\n{member.mention} has joined waiting vc,need your support @everyone\n \n' ,view=View)
 
-    # Cannot use commands(not have permission) error
+
+
+
+    # Cannot use commands error(not have permission) 
     async def on_application_command_error(interaction:discord.Interaction,error : Exception):
         try:
           if isinstance(error, commands.MissingPermissions):
@@ -69,6 +162,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds=True
 intents.members=True
+intents.voice_states=True
 client = Client(command_prefix='!',intents = intents)
 
 
@@ -77,7 +171,7 @@ Guild_Id=discord.Object(id=1267143748320624711)
 
 
 
-# join command
+# join a voice channel
 @client.tree.command(name='join',description='the bot will join in your voice channel',guild=Guild_Id)
 @commands.has_permissions(use_application_commands=True)
 async def join(interaction:discord.Interaction,user: discord.Member):
@@ -90,7 +184,7 @@ async def join(interaction:discord.Interaction,user: discord.Member):
 
 
 
-#leave command
+#leave leave a voice channel
 @client.tree.command(name='leave',description='the bot will left its current voice channel',guild=Guild_Id)
 async def leave(interaction : discord.Interaction):
     voice_client= interaction.guild.voice_client
@@ -102,7 +196,7 @@ async def leave(interaction : discord.Interaction):
 
 
 
-#kick command
+#kick a user from server
 @client.tree.command(name="kick",description="to kick a member from the server",guild=Guild_Id)
 async def   kick_memb(interaction : discord.Interaction,member: discord.Member,reason : str):
       await member.kick(reason=reason)
@@ -111,27 +205,32 @@ async def   kick_memb(interaction : discord.Interaction,member: discord.Member,r
 
 
 
-# Ban command
+# Ban a user from the server
 @client.tree.command(name='ban',description='to ban members from server',guild=Guild_Id)
 async def ban(interaction : discord.Interaction,user : discord.Member,reason : str):
     await user.ban(reason=reason)
     await interaction.response.send_message(f"The user {user.mention} has been banned from this server",ephemeral=True)
+    
 
-# Unban command
+# Unban a user from the server
 @client.tree.command(name='unban',description='to ban members from server',guild=Guild_Id)
 async def unban(interaction : discord.Interaction,user : discord.User,reason : str):
-    guild=interaction.guild
-    banned_users=guild.bans()
-    async for ban_entry in banned_users:
+    try:
+      guild=interaction.guild
+      banned_users=guild.bans()
+      async for ban_entry in banned_users:
         if ban_entry.user == user:
          await guild.unban(user,reason=reason)
          await interaction.response.send_message(f"{user.mention} ban has been revoked",ephemeral=True)
-        else:
+         return
+
          await interaction.response.send_message( f"{user.mention} has not banned",ephemeral=True)
+    except Exception as e:
+        await client.get_channel(LogChannel).send(e)
 
 
 
-# DM command
+# sents a DM message to the user
 @client.tree.command(name='dm',description='sends a message to the users dm',guild=Guild_Id)
 async def dm(interaction : discord.Interaction,user : discord.Member,message : str):
     await user.send(message)
@@ -139,6 +238,15 @@ async def dm(interaction : discord.Interaction,user : discord.Member,message : s
      await interaction.response.send_message("DM message has sent successfully",ephemeral=True)
     else:
         await interaction.response.send_message("DM message cannot sent",ephemeral=True)
+
+
+@client.tree.command(name='send',description='sends a message in a text channel',guild=Guild_Id)
+async def  send(interaction : discord. Interaction,content : str,channel : discord.TextChannel):
+    await channel.send(content)
+    await interaction.response.send_message('message sent successfully',ephemeral=True)
+
+
+
 
 
 client.run(token())
