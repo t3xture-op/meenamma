@@ -16,6 +16,7 @@ supportVC_1=1296721689266098187
 supportVC_2=1296796806709252159
 Admin=[1274694716373340233,1274694719443828847]
 
+
 # class which contains buttons for support vc
 class myview(View):
   @discord.ui.button(label='🔒 |│ SUPPORT VC-1',style=discord.ButtonStyle.red)
@@ -99,6 +100,8 @@ class Client(commands.Bot):
           embed.set_footer(text="Enjoy your stay in the server")
           await channel.send(embed=embed)
 
+
+
 #on member leaving guild
     async def on_member_remove(self,user : discord.User):
         LeaveChannel=1274694860779159705
@@ -111,6 +114,8 @@ class Client(commands.Bot):
             embed.set_thumbnail(url=user.avatar.url)
             embed.set_footer(text="Good Bye")
             await leave_channel.send(embed=embed)
+
+
 
 
     # Words detecting
@@ -128,11 +133,16 @@ class Client(commands.Bot):
             await message.channel.send(f"{message.author.mention}  ni shookshicho ente cherukkan kindum ninne")
 
 
-#  # Waiting vc
+
+
+  # voice channel codes
     async def on_voice_state_update(self,member : discord.Member,before,after):
       waiting_vc=client.get_channel(WaitingChannel)
       mod_channel=client.get_channel(ModChannel)
-      if before.channel!= waiting_vc and after.channel == waiting_vc:
+      room_join=client.get_channel(1298702896287842324)
+      category=1297946320505405493 
+      temp_voice_channels=[]
+      if before.channel!= waiting_vc and after.channel == waiting_vc: #waiting vc
         if any(role.id in Admin for role in member.roles):
          return
         elif ModChannel is not None:
@@ -143,7 +153,33 @@ class Client(commands.Bot):
             embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1267463145509884034/1297063562220404756/66cd8567624cffc5d6b838dd.gif?ex=67149013&is=67133e93&hm=98795ac7de12eac645508a9ccb898da2076f0844d9f2e266e8deb5e7b0c243cf&')
             await member.send(embed=embed)
             await mod_channel.send(f'\n\n⚠️**ATTENTION**⚠️\n\n{member.mention} has joined waiting vc,need your support @everyone\n \n' ,view=View)
+      
+      
+      if before.channel!= room_join and after.channel == room_join:  #private rooms
+         room_category=client.get_channel(category)
+         temp_voice_channel = await member.guild.create_voice_channel(name=f'{member.name} room',category=room_category,bitrate=64000)
+         await member.move_to(temp_voice_channel)
+         overwrite=temp_voice_channel.overwrites_for(member)
+         overwrite.view_channel=True
+         await temp_voice_channel.set_permissions(member,overwrite=overwrite)
+         for role in member.roles:
+            if role.permissions.administrator:
+                return
+            else:
+                overwrite_role=temp_voice_channel.overwrites_for(role)
+                overwrite_role.view_channel=False
+                await temp_voice_channel.set_permissions(role,overwrite=overwrite_role)
+         
+         
+      room_category=client.get_channel(category)
+      temp_voice_channels=room_category.voice_channels
+      for voicechannels in temp_voice_channels:
+       if voicechannels == room_join:
+         continue
 
+      if before.channel == voicechannels and after.channel!= voicechannels:
+         if len(voicechannels.members)== 0:   
+          await  voicechannels.delete()
 
 
 
@@ -173,7 +209,7 @@ Guild_Id=discord.Object(id=1267143748320624711)
 
 # join a voice channel
 @client.tree.command(name='join',description='the bot will join in your voice channel',guild=Guild_Id)
-@commands.has_permissions(use_application_commands=True)
+@app_commands.default_permissions(move_members =True)
 async def join(interaction:discord.Interaction,user: discord.Member):
      if user.voice:
         channel=user.voice.channel
@@ -184,8 +220,10 @@ async def join(interaction:discord.Interaction,user: discord.Member):
 
 
 
+
 #leave leave a voice channel
 @client.tree.command(name='leave',description='the bot will left its current voice channel',guild=Guild_Id)
+@app_commands.default_permissions(move_members =True)
 async def leave(interaction : discord.Interaction):
     voice_client= interaction.guild.voice_client
     if voice_client and voice_client.is_connected():
@@ -196,8 +234,10 @@ async def leave(interaction : discord.Interaction):
 
 
 
+
 #kick a user from server
 @client.tree.command(name="kick",description="to kick a member from the server",guild=Guild_Id)
+@app_commands.default_permissions(administrator =True)
 async def   kick_memb(interaction : discord.Interaction,member: discord.Member,reason : str):
       await member.kick(reason=reason)
       await interaction.response.send_message(f"the user {member.mention} has been kicked from the server",ephemeral=True)
@@ -205,15 +245,20 @@ async def   kick_memb(interaction : discord.Interaction,member: discord.Member,r
 
 
 
+
 # Ban a user from the server
 @client.tree.command(name='ban',description='to ban members from server',guild=Guild_Id)
+@app_commands.default_permissions(administrator =True)
 async def ban(interaction : discord.Interaction,user : discord.Member,reason : str):
     await user.ban(reason=reason)
     await interaction.response.send_message(f"The user {user.mention} has been banned from this server",ephemeral=True)
     
 
+
+
 # Unban a user from the server
 @client.tree.command(name='unban',description='to ban members from server',guild=Guild_Id)
+@app_commands.default_permissions(administrator =True)
 async def unban(interaction : discord.Interaction,user : discord.User,reason : str):
     try:
       guild=interaction.guild
@@ -223,15 +268,17 @@ async def unban(interaction : discord.Interaction,user : discord.User,reason : s
          await guild.unban(user,reason=reason)
          await interaction.response.send_message(f"{user.mention} ban has been revoked",ephemeral=True)
          return
-
+        else:
          await interaction.response.send_message( f"{user.mention} has not banned",ephemeral=True)
     except Exception as e:
         await client.get_channel(LogChannel).send(e)
 
 
 
+
 # sents a DM message to the user
 @client.tree.command(name='dm',description='sends a message to the users dm',guild=Guild_Id)
+@app_commands.default_permissions(administrator =True)
 async def dm(interaction : discord.Interaction,user : discord.Member,message : str):
     await user.send(message)
     if dm:
@@ -240,11 +287,55 @@ async def dm(interaction : discord.Interaction,user : discord.Member,message : s
         await interaction.response.send_message("DM message cannot sent",ephemeral=True)
 
 
-@client.tree.command(name='send',description='sends a message in a text channel',guild=Guild_Id)
-async def  send(interaction : discord. Interaction,content : str,channel : discord.TextChannel):
-    await channel.send(content)
-    await interaction.response.send_message('message sent successfully',ephemeral=True)
+# send a messag ein a channel
 
+@client.tree.command(name='send',description='sends a message in a text channel',guild=Guild_Id)
+@app_commands.default_permissions(administrator =True)
+async def  send(interaction : discord. Interaction,content : str,channel : discord.TextChannel):
+     await channel.send( content)
+     await interaction.response.send_message('message sent successfully',ephemeral=True)
+    
+
+
+#locks a channel
+@client.tree.command(name='lock',description='lock a specific channel',guild=Guild_Id)
+@app_commands.default_permissions(administrator=True)
+async def lock_channel(interaction : discord.Interaction,channel : discord.TextChannel):
+    for role in interaction.guild.roles:
+        if role.permissions.administrator:
+            continue
+        else:
+            overwrite= channel.overwrites_for(role)
+            overwrite.send_messages=False
+            await channel.set_permissions(role,overwrite=overwrite)
+
+    await interaction.response.send_message("Channel has been locked")
+
+
+
+#unlocks a channel
+@client.tree.command(name='unlock', description='Unlocks a locked text channel', guild=Guild_Id)
+@app_commands.default_permissions(administrator=True)
+async def unlock_channel(interaction: discord.Interaction, channel: discord.TextChannel):
+    is_locked =False
+    for roles in interaction.guild.roles:
+        if roles.permissions.administrator:
+            continue
+        else:
+            overwrite = channel.overwrites_for(roles)
+            if overwrite.send_messages is False:
+                is_locked = True
+                overwrite.send_messages=True
+                await channel.set_permissions(roles, overwrite=overwrite)
+            
+    
+    
+    if is_locked:
+        await interaction.response.send_message("Channel has unlocked")
+    else:
+         await interaction.response.send_message("Channel is not locked")
+
+                
 
 
 
